@@ -1,4 +1,5 @@
 import os
+import sys
 import asyncio
 import signal
 from PySide6.QtGui import QGuiApplication
@@ -64,30 +65,41 @@ class AsyncHelper(QObject):
             Upon handling this event, a function will be called that
             resumes the asyncio event loop. """
         self.loop.stop()
-        QApplication.postEvent(self.reenter_qt, self.ReenterQtEvent(self.continue_loop))
+        QGuiApplication.postEvent(self.reenter_qt, self.ReenterQtEvent(self.continue_loop))
 
 
 async def main():
-    future = asyncio.Future()
-    engine = QQmlApplicationEngine()
-    engine.rootContext().setContextProperty("postMan", post_man)
-    engine.addImportPath(os.path.dirname(__file__))
-    engine.load("main.qml")
-    
-    if hasattr(app, "aboutToQuit"):
-        getattr(app, "aboutToQuit").connect(
-            lambda: os._exit(5)  # maybe clean work needed to do
-        )
-    await future
+    try:
+        future = asyncio.Future()
+        engine = QQmlApplicationEngine()
+        # engine.rootContext().setContextProperty("postMan", post_man)
+        engine.addImportPath(os.path.dirname(__file__))
+        engine.load(os.path.join(os.path.dirname(__file__), "main.qml"))
+
+        if hasattr(app, "aboutToQuit"):
+            getattr(app, "aboutToQuit").connect(
+                lambda: os._exit(5)  # maybe clean work needed to do
+            )
+        await future
+    except Exception as e:
+        print(e)
+        import traceback
+        traceback.print_exc()
     
 
 if __name__ == "__main__":
     try:
+        import qasync
         app = QGuiApplication()
         async_helper = AsyncHelper()
         async_helper.set_entry(main)
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         async_helper.launch_guest_run()
         app.exec()
+        # loop = qasync.QEventLoop(app)
+        # asyncio.set_event_loop(loop)
+        # t = loop.create_task(main())
+        # loop.run_until_complete(t)
+        # app.exec()
     except asyncio.exceptions.CancelledError:
         sys.exit(0)
