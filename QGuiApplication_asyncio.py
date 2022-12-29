@@ -89,13 +89,13 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        import qasync
         app = QGuiApplication()
         async_helper = AsyncHelper()
         async_helper.set_entry(main)
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         async_helper.launch_guest_run()
         app.exec()
+        # import qasync
         # loop = qasync.QEventLoop(app)
         # asyncio.set_event_loop(loop)
         # t = loop.create_task(main())
